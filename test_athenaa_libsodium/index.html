@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>PSI Athenaa Test</title>
+</head>
+<body>
+  <h2>Test Athenaa PSI via WebAssembly</h2>
+  <button onclick="runPSI()">Lancer PSI</button>
+  <pre id="output"></pre>
+
+  <script src="athenaa.js"></script>
+  <script>
+    function runPSI() {
+      const scalar = new Uint8Array(32).fill(1); // exemple KB
+      const key = new Uint8Array(32).fill(2);    // exemple KAB
+      const nonce = new Uint8Array(8).fill(3);    // exemple nonce
+      const word = new TextEncoder().encode("secret2"); // le mot à traiter
+      const out = new Uint8Array(32);             // résultat
+
+      // Attendre que le module WASM soit prêt
+      Module.onRuntimeInitialized = () => {
+        const malloc = Module._malloc;
+        const memcpy = Module.HEAPU8.set;
+
+        const ptrScalar = malloc(32);
+        const ptrKey = malloc(32);
+        const ptrNonce = malloc(8);
+        const ptrWord = malloc(word.length);
+        const ptrOut = malloc(32);
+
+        memcpy(scalar, Module.HEAPU8.subarray(ptrScalar, ptrScalar + 32));
+        memcpy(key, Module.HEAPU8.subarray(ptrKey, ptrKey + 32));
+        memcpy(nonce, Module.HEAPU8.subarray(ptrNonce, ptrNonce + 8));
+        memcpy(word, Module.HEAPU8.subarray(ptrWord, ptrWord + word.length));
+
+        // Appel de la fonction C
+        Module.ccall("psi_compute", "void",
+          ["number", "number", "number", "number", "number", "number"],
+          [ptrScalar, ptrKey, ptrNonce, ptrWord, word.length, ptrOut]);
+
+        const result = Module.HEAPU8.slice(ptrOut, ptrOut + 32);
+
+        document.getElementById("output").textContent = 
+          "Résultat (SHA256 final):\\n" + Array.from(result).map(b => b.toString(16).padStart(2, "0")).join("");
+
+        Module._free(ptrScalar);
+        Module._free(ptrKey);
+        Module._free(ptrNonce);
+        Module._free(ptrWord);
+        Module._free(ptrOut);
+      };
+    }
+  </script>
+</body>
+</html>
