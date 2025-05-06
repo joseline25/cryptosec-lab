@@ -28,7 +28,7 @@ def point_to_digest(P: Point) -> bytes:
 def generate_scalar() -> int:
     return secrets.randbelow(order - 1) + 1
 
-# 🔐 Serveur : encode et insère dans Cuckoo Filter
+#  Serveur : encode et insère dans Cuckoo Filter, cette opération peut être faite une seule fois
 def server_prepare_cf(X, alpha, capacity=1000):
     #cf = CuckooFilter(capacity=capacity, bucket_size=4, fingerprint_size=16)
     cf = CuckooFilter(capacity=capacity)
@@ -39,7 +39,7 @@ def server_prepare_cf(X, alpha, capacity=1000):
         cf.insert(digest)
     return cf
 
-# 👩‍💻 Client : préparation
+#  Client : préparation de sa requête
 def client_prepare(Y):
     beta_list = []
     blinded = []
@@ -51,11 +51,11 @@ def client_prepare(Y):
         blinded.append((a, beta))
     return blinded
 
-# 📨 Serveur applique alpha
+#  Serveur applique alpha
 def server_apply_alpha(blinded, alpha):
     return [alpha * a for (a, _) in blinded]
 
-# 🧩 Client : retire beta et teste dans CF
+# Client : retire beta et teste dans CF
 def client_check_cf(received, beta_list, Y, cf):
     intersection = []
     for i in range(len(received)):
@@ -66,7 +66,7 @@ def client_check_cf(received, beta_list, Y, cf):
             intersection.append(Y[i])
     return intersection
 
-# 🔁 Mise à jour dynamique du CF
+#  Mise à jour dynamique du CF
 def update_cf(cf, z_set, alpha, mode="insert", threshold=0.95):
     updated_elements = []
     for z in z_set:
@@ -98,7 +98,7 @@ def update_cf(cf, z_set, alpha, mode="insert", threshold=0.95):
         raise ValueError("Mode must be 'insert' or 'delete'")
 
 
-# 🎯 Test
+#  Test
 if __name__ == "__main__":
     server_set = ['alice@example.com', 'bob@example.com', 'charlie@example.com']
     client_set = ['dave@example.com', 'bob@example.com', 'zoe@example.com']
@@ -111,8 +111,8 @@ if __name__ == "__main__":
     received = server_apply_alpha(blinded, alpha)
 
     intersection = client_check_cf(received, beta_list, client_set, cf)
-    print("✅ Intersection:", intersection)
-    # 🔁 Mise à jour dynamique
+    print("Intersection:", intersection)
+    # Mise à jour dynamique
     to_insert = ['newuser@example.com']
     to_delete = ['charlie@example.com']
 
